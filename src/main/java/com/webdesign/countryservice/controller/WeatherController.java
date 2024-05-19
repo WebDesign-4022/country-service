@@ -17,10 +17,4 @@ public class WeatherController {
     public Optional<Weather> getWeatherByCountryName(@PathVariable String name) {
         return weatherService.getWeatherByCountryName(name);
     }
-
-    @PostMapping("/{name}/weather")
-    public void addWeather(@PathVariable String name, @RequestBody Weather weather) {
-        weather.setCountryName(name);
-        weatherService.addWeather(weather);
-    }
 }

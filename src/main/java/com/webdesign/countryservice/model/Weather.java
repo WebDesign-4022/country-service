@@ -16,4 +16,8 @@ public class Weather {
         this.temp = temp;
         this.humidity = humidity;
     }
+
+    public String getCountryName() {
+        return countryName;
+    }
 }
