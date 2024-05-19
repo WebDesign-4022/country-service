@@ -30,3 +30,5 @@ target/*
 .idea/*
 .mvn/*
 mvnw*
+
+application-dev.properties

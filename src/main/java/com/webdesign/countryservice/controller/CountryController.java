@@ -1,6 +1,5 @@
 package com.webdesign.countryservice.controller;
 
-import com.webdesign.countryservice.model.Country;
 import com.webdesign.countryservice.service.CountryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +14,13 @@ public class CountryController {
 
     @GetMapping
     public String getAllCountries() {
-        String allCountries = countryService.getAllCountries();
-        return Objects.requireNonNullElse(allCountries, "No countries found");
+        String allCountriesInfo = countryService.getAllCountries();
+        return Objects.requireNonNullElse(allCountriesInfo, "Can not get countries information");
     }
 
     @GetMapping("/{name}")
-    public Country getCountryByName(@PathVariable String name) {
-        return null;
+    public String getCountryByName(@PathVariable String name) {
+        String countryInfo = countryService.getCountryByName(name);
+        return Objects.requireNonNullElse(countryInfo, "Can not get country information");
     }
 }
