@@ -15,12 +15,12 @@ public class CountryController {
     @GetMapping
     public String getAllCountries() {
         String allCountriesInfo = countryService.getAllCountries();
-        return Objects.requireNonNullElse(allCountriesInfo, "Can not get countries information");
+        return Objects.requireNonNullElse(allCountriesInfo, "Can not get countries information.");
     }
 
     @GetMapping("/{name}")
     public String getCountryByName(@PathVariable String name) {
         String countryInfo = countryService.getCountryByName(name);
-        return Objects.requireNonNullElse(countryInfo, "Can not get country information");
+        return Objects.requireNonNullElse(countryInfo, "Can not get country information.");
     }
 }

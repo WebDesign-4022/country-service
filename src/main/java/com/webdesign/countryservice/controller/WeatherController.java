@@ -1,11 +1,10 @@
 package com.webdesign.countryservice.controller;
 
-import com.webdesign.countryservice.model.Weather;
 import com.webdesign.countryservice.service.WeatherService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/countries")
@@ -14,7 +13,8 @@ public class WeatherController {
     private WeatherService weatherService;
 
     @GetMapping("/{name}/weather")
-    public Optional<Weather> getWeatherByCountryName(@PathVariable String name) {
-        return weatherService.getWeatherByCountryName(name);
+    public String getWeatherByCountryName(@PathVariable String name) {
+        String capitalWeather = weatherService.getWeatherByCountryName(name);
+        return Objects.requireNonNullElse(capitalWeather, "Can not get country weather information.");
     }
 }

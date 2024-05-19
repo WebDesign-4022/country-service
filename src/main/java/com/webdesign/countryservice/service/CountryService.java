@@ -85,7 +85,7 @@ public class CountryService {
             HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/country?name=" + countryName)
                     .header("X-Api-Key", apiKey)
                     .asString();
-            LOGGER.log(new LogRecord(INFO_LEVEL, "Country information received"));
+            LOGGER.log(new LogRecord(INFO_LEVEL, "Country information received: " + countryName));
 
             if (response.getStatus() != 200) throw new UnirestException(response.getBody());
             return reformatCountryInfo(response.getBody());
