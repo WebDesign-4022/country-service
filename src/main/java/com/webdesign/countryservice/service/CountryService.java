@@ -24,8 +24,4 @@ public class CountryService {
         }
         return null;
     }
-
-    public void addCountry(Country country) {
-        countries.add(country);
-    }
 }

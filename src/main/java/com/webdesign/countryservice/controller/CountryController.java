@@ -23,10 +23,4 @@ public class CountryController {
     public Country getCountryByName(@PathVariable String name) {
         return countryService.getCountryByName(name);
     }
-
-
-//    @PostMapping
-//    public void addCountry(@RequestBody Country country) {
-//        countryService.addCountry(country);
-//    }
 }
