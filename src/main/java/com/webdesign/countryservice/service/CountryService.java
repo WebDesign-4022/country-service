@@ -6,6 +6,12 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -19,6 +25,44 @@ public class CountryService {
     @Value("${apiKey}")
     private String apiKey;
 
+    private String reformatAllCountriesInfo(String rawResponse) {
+        JsonElement rootElement = JsonParser.parseString(rawResponse);
+        JsonObject rootObject = rootElement.getAsJsonObject();
+
+        JsonArray dataArray = rootObject.getAsJsonArray("data");
+        JsonArray countriesArray = new JsonArray();
+        for (JsonElement element : dataArray) {
+            JsonObject countryObject = element.getAsJsonObject();
+            String countryName = countryObject.get("country").getAsString();
+
+            JsonObject newCountryObject = new JsonObject();
+            newCountryObject.addProperty("name", countryName);
+            countriesArray.add(newCountryObject);
+        }
+
+        JsonObject resultObject = new JsonObject();
+        resultObject.add("countries", countriesArray);
+        resultObject.addProperty("count", countriesArray.size());
+
+        return resultObject.toString();
+    }
+
+    private String reformatCountryInfo(String rawResponse) {
+        JsonElement rootElement = JsonParser.parseString(rawResponse);
+        JsonArray jsonArray = rootElement.getAsJsonArray();
+        JsonObject firstObject = jsonArray.get(0).getAsJsonObject();
+
+        JsonObject simplifiedObject = new JsonObject();
+        simplifiedObject.addProperty("name", firstObject.get("name").getAsString().split(",")[0]); // "Iran, Islamic Republic Of" -> "Iran"
+        simplifiedObject.addProperty("capital", firstObject.get("capital").getAsString());
+        simplifiedObject.addProperty("iso2", firstObject.get("iso2").getAsString());
+        simplifiedObject.addProperty("population", firstObject.get("population").getAsDouble());
+        simplifiedObject.addProperty("pop_growth", firstObject.get("pop_growth").getAsDouble());
+        simplifiedObject.add("currency", firstObject.get("currency").getAsJsonObject());
+
+        return simplifiedObject.toString();
+    }
+
     public String getAllCountries() {
         Unirest.setTimeouts(0, 0);
         try {
@@ -27,7 +71,7 @@ public class CountryService {
             LOGGER.log(new LogRecord(INFO_LEVEL, "All countries information received"));
 
             if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return response.getBody();
+            return reformatAllCountriesInfo(response.getBody());
 
         } catch (UnirestException e) {
             LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting all countries: " + e.getMessage()));
@@ -44,7 +88,7 @@ public class CountryService {
             LOGGER.log(new LogRecord(INFO_LEVEL, "Country information received"));
 
             if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return response.getBody();
+            return reformatCountryInfo(response.getBody());
 
         } catch (UnirestException e) {
             LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting country by name: " + e.getMessage()));
