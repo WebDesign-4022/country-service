@@ -1,27 +1,29 @@
 package com.webdesign.countryservice.service;
 
-import com.webdesign.countryservice.model.Country;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Dictionary;
-import java.util.List;
-import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 @Service
 public class CountryService {
-    private final List<Country> countries = new ArrayList<>();
+    private static final Logger LOGGER = Logger.getLogger(CountryService.class.getName());
+    private static final Level ERROR_LEVEL = Level.SEVERE;
+    private static final Level INFO_LEVEL = Level.INFO;
 
-    public List<Country> getAllCountries() {
-        return countries;
-    }
-
-    public Country getCountryByName(String name) {
-        for (Country country : countries) {
-            if (country.getName().equals(name)) {
-                return country;
-            }
+    public String getAllCountries() {
+        Unirest.setTimeouts(0, 0);
+        try {
+            HttpResponse<String> response = Unirest.get("https://countriesnow.space/api/v0.1/countries").asString();
+            LOGGER.log(new LogRecord(INFO_LEVEL, "Countries list received"));
+            return response.getBody();
+        } catch (UnirestException e) {
+            LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting all countries list: " + e.getMessage()));
+            return null;
         }
-        return null;
     }
 }

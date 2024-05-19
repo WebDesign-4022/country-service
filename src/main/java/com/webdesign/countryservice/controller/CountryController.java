@@ -5,8 +5,7 @@ import com.webdesign.countryservice.service.CountryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Dictionary;
-import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/countries")
@@ -15,12 +14,13 @@ public class CountryController {
     private CountryService countryService;
 
     @GetMapping
-    public List<Country> getAllCountries() {
-        return countryService.getAllCountries();
+    public String getAllCountries() {
+        String allCountries = countryService.getAllCountries();
+        return Objects.requireNonNullElse(allCountries, "No countries found");
     }
 
     @GetMapping("/{name}")
     public Country getCountryByName(@PathVariable String name) {
-        return countryService.getCountryByName(name);
+        return null;
     }
 }
