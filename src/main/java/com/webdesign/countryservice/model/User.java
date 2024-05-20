@@ -8,15 +8,15 @@ import java.util.UUID;
 public class User {
     private int id;
 
-    private String name;
-    private String password;
+    private final String name;
+    private final String password;
     private boolean active;
 
     private String loginToken;
     private LocalDateTime loginTokenExpires;
 
     private List<Token> apiTokens = new ArrayList<>();
-    private static ArrayList<User> users = new ArrayList<>();
+    private static final ArrayList<User> users = new ArrayList<>();
 
     public User(String name, String password) {
         this.id = users.size();
@@ -24,10 +24,6 @@ public class User {
         this.password = password;
         this.active = false;
         users.add(this);
-    }
-
-    public int getId() {
-        return id;
     }
 
     public String getName() {
@@ -42,14 +38,17 @@ public class User {
         this.active = active;
     }
 
-
-    public List<Token> getApiTokens() {
-        return apiTokens;
+    public boolean isTokenValid() {
+        if (loginTokenExpires == null) {
+            return false;
+        }
+        return loginTokenExpires.isAfter(LocalDateTime.now());
     }
 
-    public static User getUserById(int id) {
+
+    public static User getUserByName(String name) {
         for (User user : users) {
-            if (user.id == id) {
+            if (user.getName().equals(name)) {
                 return user;
             }
         }
@@ -58,28 +57,29 @@ public class User {
 
     public static User getUserByLoginToken(String loginToken) {
         for (User user : users) {
-            if (user.loginToken != null && user.loginToken.equals(loginToken) && user.loginTokenExpires.isAfter(LocalDateTime.now())) {
+            if (user.loginToken != null && user.loginToken.equals(loginToken) && user.isTokenValid()) {
                 return user;
             }
         }
         return null;
     }
 
-    public static User login(String name, String password) {
+    public static String login(String name, String password) {
         for (User user : users) {
             if (user.getName().equals(name) && user.getPassword().equals(password) && user.active) {
-                user.loginToken = "LOGIN " + UUID.randomUUID();
-                user.loginTokenExpires = LocalDateTime.now().plusHours(1);
-                return user;
+                if (user.loginToken == null || !user.isTokenValid()) {
+                    user.loginToken = "LOGIN " + UUID.randomUUID();
+                    user.loginTokenExpires = LocalDateTime.now().plusHours(1);
+                }
+                return user.loginToken;
             }
         }
         return null;
     }
-
 
     public static boolean authenticate(String loginToken) {
         for (User user : users) {
-            if (user.loginToken != null && user.loginToken.equals(loginToken) && user.active && user.loginTokenExpires.isAfter(LocalDateTime.now())) {
+            if (user.loginToken != null && user.loginToken.equals(loginToken) && user.active && user.isTokenValid()) {
                 return true;
             }
         }
