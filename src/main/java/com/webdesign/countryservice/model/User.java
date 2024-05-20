@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class User {
-    private int id;
-
     private final String name;
     private final String password;
     private boolean active;
@@ -15,11 +13,10 @@ public class User {
     private String loginToken;
     private LocalDateTime loginTokenExpires;
 
-    private List<Token> apiTokens = new ArrayList<>();
+    private final List<ApiToken> apiTokens = new ArrayList<>();
     private static final ArrayList<User> users = new ArrayList<>();
 
     public User(String name, String password) {
-        this.id = users.size();
         this.name = name;
         this.password = password;
         this.active = false;
@@ -49,6 +46,18 @@ public class User {
         return loginTokenExpires.isAfter(LocalDateTime.now());
     }
 
+    public void addApiToken(ApiToken apiToken) {
+        this.apiTokens.add(apiToken);
+    }
+
+    public List<ApiToken> getValidApiTokens() {
+        List<ApiToken> validApiTokens = new ArrayList<>();
+        for (ApiToken apiToken : apiTokens) {
+            if (apiToken.isValid()) validApiTokens.add(apiToken);
+        }
+        return validApiTokens;
+    }
+
     public static ArrayList<User> getUsers() {
         return users;
     }
@@ -76,20 +85,11 @@ public class User {
             if (user.getName().equals(name) && user.getPassword().equals(password) && user.active) {
                 if (user.loginToken == null || !user.isTokenValid()) {
                     user.loginToken = "LOGIN " + UUID.randomUUID();
-                    user.loginTokenExpires = LocalDateTime.now().plusHours(1);
+                    user.loginTokenExpires = LocalDateTime.now().plusMinutes(10);
                 }
                 return user.loginToken;
             }
         }
         return null;
-    }
-
-    public static boolean authenticate(String loginToken) {
-        for (User user : users) {
-            if (user.loginToken != null && user.loginToken.equals(loginToken) && user.active && user.isTokenValid()) {
-                return true;
-            }
-        }
-        return false;
     }
 }
