@@ -27,6 +27,6 @@ public class AuthenticationController {
         String username = req.get("username");
         String password = req.get("password");
         String response = authenticationService.login(username, password);
-        return Objects.requireNonNullElse(response, "Login failed. (check information or activate)");
+        return Objects.requireNonNullElse(response, "Login failed. (check information or activate your account)");
     }
 }

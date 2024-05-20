@@ -38,6 +38,10 @@ public class User {
         this.active = active;
     }
 
+    public boolean getActive() {
+        return active;
+    }
+
     public boolean isTokenValid() {
         if (loginTokenExpires == null) {
             return false;
@@ -45,6 +49,9 @@ public class User {
         return loginTokenExpires.isAfter(LocalDateTime.now());
     }
 
+    public static ArrayList<User> getUsers() {
+        return users;
+    }
 
     public static User getUserByName(String name) {
         for (User user : users) {
