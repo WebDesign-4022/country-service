@@ -68,7 +68,7 @@ public class User {
     public static User login(String name, String password) {
         for (User user : users) {
             if (user.getName().equals(name) && user.getPassword().equals(password) && user.active) {
-                user.loginToken = UUID.randomUUID().toString();
+                user.loginToken = "LOGIN " + UUID.randomUUID();
                 user.loginTokenExpires = LocalDateTime.now().plusHours(1);
                 return user;
             }
