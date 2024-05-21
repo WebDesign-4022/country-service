@@ -3,6 +3,7 @@ package com.webdesign.countryservice.service;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.webdesign.countryservice.model.ApiToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,25 +29,13 @@ public class WeatherService {
     @Autowired
     private CountryService countryService;
 
+    public String getWeatherByCountryName(String countryName, String token) {
+        ApiToken apiToken = ApiToken.getToken(token);
+        if (apiToken == null || !apiToken.isValid()) {
+            return null;
+        }
 
-    private String reformatWeatherInfo(String weatherInfo, String countryName, String capitalName) {
-        JsonObject weatherData = JsonParser.parseString(weatherInfo).getAsJsonObject();
-        JsonObject formattedJson = new JsonObject();
-
-        formattedJson.addProperty("country_name", countryName);
-        formattedJson.addProperty("capital", capitalName);
-
-        formattedJson.addProperty("wind_speed", weatherData.get("wind_speed").getAsDouble());
-        formattedJson.addProperty("wind_degrees", weatherData.get("wind_degrees").getAsInt());
-        formattedJson.addProperty("temp", weatherData.get("temp").getAsInt());
-        formattedJson.addProperty("humidity", weatherData.get("humidity").getAsInt());
-
-        return formattedJson.toString();
-    }
-
-
-    public String getWeatherByCountryName(String countryName) {
-        String countryInfo = countryService.getCountryByName(countryName);
+        String countryInfo = countryService.getCountryByName(countryName, token);
         JsonElement rootElement = JsonParser.parseString(countryInfo);
         JsonObject jsonObject = rootElement.getAsJsonObject();
         String capitalName = jsonObject.get("capital").getAsString();
@@ -65,5 +54,21 @@ public class WeatherService {
             LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting weather by city name: " + e.getMessage()));
             return null;
         }
+    }
+
+
+    private String reformatWeatherInfo(String weatherInfo, String countryName, String capitalName) {
+        JsonObject weatherData = JsonParser.parseString(weatherInfo).getAsJsonObject();
+        JsonObject formattedJson = new JsonObject();
+
+        formattedJson.addProperty("country_name", countryName);
+        formattedJson.addProperty("capital", capitalName);
+
+        formattedJson.addProperty("wind_speed", weatherData.get("wind_speed").getAsDouble());
+        formattedJson.addProperty("wind_degrees", weatherData.get("wind_degrees").getAsInt());
+        formattedJson.addProperty("temp", weatherData.get("temp").getAsInt());
+        formattedJson.addProperty("humidity", weatherData.get("humidity").getAsInt());
+
+        return formattedJson.toString();
     }
 }

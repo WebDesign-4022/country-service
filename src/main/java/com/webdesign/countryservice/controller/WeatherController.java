@@ -13,8 +13,8 @@ public class WeatherController {
     private WeatherService weatherService;
 
     @GetMapping("/{name}/weather")
-    public String getWeatherByCountryName(@PathVariable String name) {
-        String capitalWeather = weatherService.getWeatherByCountryName(name);
+    public String getWeatherByCountryName(@RequestHeader("Authorization") String apiToken, @PathVariable String name) {
+        String capitalWeather = weatherService.getWeatherByCountryName(name, apiToken);
         return Objects.requireNonNullElse(capitalWeather, "Can not get country weather information.");
     }
 }

@@ -13,14 +13,14 @@ public class CountryController {
     private CountryService countryService;
 
     @GetMapping
-    public String getAllCountries() {
-        String allCountriesInfo = countryService.getAllCountries();
+    public String getAllCountries(@RequestHeader("Authorization") String apiToken) {
+        String allCountriesInfo = countryService.getAllCountries(apiToken);
         return Objects.requireNonNullElse(allCountriesInfo, "Can not get countries information.");
     }
 
     @GetMapping("/{name}")
-    public String getCountryByName(@PathVariable String name) {
-        String countryInfo = countryService.getCountryByName(name);
+    public String getCountryByName(@RequestHeader("Authorization") String apiToken, @PathVariable String name) {
+        String countryInfo = countryService.getCountryByName(name, apiToken);
         return Objects.requireNonNullElse(countryInfo, "Can not get country information.");
     }
 }

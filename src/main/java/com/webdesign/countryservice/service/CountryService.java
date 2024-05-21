@@ -3,6 +3,7 @@ package com.webdesign.countryservice.service;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.webdesign.countryservice.model.ApiToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,49 @@ public class CountryService {
 
     @Value("${apiKey}")
     private String apiKey;
+
+    public String getAllCountries(String token) {
+        ApiToken apiToken = ApiToken.getToken(token);
+        if (apiToken == null || !apiToken.isValid()) {
+            return null;
+        }
+
+        Unirest.setTimeouts(0, 0);
+        try {
+            HttpResponse<String> response = Unirest.get("https://countriesnow.space/api/v0.1/countries")
+                    .asString();
+            LOGGER.log(new LogRecord(INFO_LEVEL, "All countries information received"));
+
+            if (response.getStatus() != 200) throw new UnirestException(response.getBody());
+            return reformatAllCountriesInfo(response.getBody());
+
+        } catch (UnirestException e) {
+            LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting all countries: " + e.getMessage()));
+            return null;
+        }
+    }
+
+    public String getCountryByName(String countryName, String token) {
+        ApiToken apiToken = ApiToken.getToken(token);
+        if (apiToken == null || !apiToken.isValid()) {
+            return null;
+        }
+
+        Unirest.setTimeouts(0, 0);
+        try {
+            HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/country?name=" + countryName)
+                    .header("X-Api-Key", apiKey)
+                    .asString();
+            LOGGER.log(new LogRecord(INFO_LEVEL, "Country information received: " + countryName));
+
+            if (response.getStatus() != 200) throw new UnirestException(response.getBody());
+            return reformatCountryInfo(response.getBody());
+
+        } catch (UnirestException e) {
+            LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting country by name: " + e.getMessage()));
+            return null;
+        }
+    }
 
     private String reformatAllCountriesInfo(String rawResponse) {
         JsonElement rootElement = JsonParser.parseString(rawResponse);
@@ -61,38 +105,5 @@ public class CountryService {
         simplifiedObject.add("currency", firstObject.get("currency").getAsJsonObject());
 
         return simplifiedObject.toString();
-    }
-
-    public String getAllCountries() {
-        Unirest.setTimeouts(0, 0);
-        try {
-            HttpResponse<String> response = Unirest.get("https://countriesnow.space/api/v0.1/countries")
-                    .asString();
-            LOGGER.log(new LogRecord(INFO_LEVEL, "All countries information received"));
-
-            if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return reformatAllCountriesInfo(response.getBody());
-
-        } catch (UnirestException e) {
-            LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting all countries: " + e.getMessage()));
-            return null;
-        }
-    }
-
-    public String getCountryByName(String countryName) {
-        Unirest.setTimeouts(0, 0);
-        try {
-            HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/country?name=" + countryName)
-                    .header("X-Api-Key", apiKey)
-                    .asString();
-            LOGGER.log(new LogRecord(INFO_LEVEL, "Country information received: " + countryName));
-
-            if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return reformatCountryInfo(response.getBody());
-
-        } catch (UnirestException e) {
-            LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting country by name: " + e.getMessage()));
-            return null;
-        }
     }
 }
