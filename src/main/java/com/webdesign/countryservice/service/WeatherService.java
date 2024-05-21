@@ -4,6 +4,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.webdesign.countryservice.model.ApiToken;
+import com.webdesign.countryservice.model.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -26,6 +30,8 @@ public class WeatherService {
     @Value("${apiKey}")
     private String apiKey;
 
+    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+
     @Autowired
     private CountryService countryService;
 
@@ -35,7 +41,15 @@ public class WeatherService {
             return null;
         }
 
+        String cacheKey = "weather_" + countryName;
+        CacheEntry cached = cache.get(cacheKey);
+        if (cached != null && cached.isValid()) {
+            return cached.getData();
+        }
+
         String countryInfo = countryService.getCountryByName(countryName, token);
+        if (countryInfo == null) return null;
+
         JsonElement rootElement = JsonParser.parseString(countryInfo);
         JsonObject jsonObject = rootElement.getAsJsonObject();
         String capitalName = jsonObject.get("capital").getAsString();
@@ -48,7 +62,9 @@ public class WeatherService {
             LOGGER.log(new LogRecord(INFO_LEVEL, "Weather information received: " + capitalName));
 
             if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return reformatWeatherInfo(response.getBody(), countryName, capitalName);
+            String reformattedData = reformatWeatherInfo(response.getBody(), countryName, capitalName);
+            cache.put(cacheKey, new CacheEntry(reformattedData, LocalDateTime.now().plusHours(1)));
+            return reformattedData;
 
         } catch (UnirestException e) {
             LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting weather by city name: " + e.getMessage()));

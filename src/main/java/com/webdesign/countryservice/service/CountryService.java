@@ -1,9 +1,12 @@
 package com.webdesign.countryservice.service;
 
+
+import com.webdesign.countryservice.model.ApiToken;
+import com.webdesign.countryservice.model.CacheEntry;
+
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import com.webdesign.countryservice.model.ApiToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +15,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -26,10 +31,18 @@ public class CountryService {
     @Value("${apiKey}")
     private String apiKey;
 
+    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+
     public String getAllCountries(String token) {
         ApiToken apiToken = ApiToken.getToken(token);
         if (apiToken == null || !apiToken.isValid()) {
             return null;
+        }
+
+        String cacheKey = "allCountries";
+        CacheEntry cached = cache.get(cacheKey);
+        if (cached != null && cached.isValid()) {
+            return cached.getData();
         }
 
         Unirest.setTimeouts(0, 0);
@@ -39,7 +52,10 @@ public class CountryService {
             LOGGER.log(new LogRecord(INFO_LEVEL, "All countries information received"));
 
             if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return reformatAllCountriesInfo(response.getBody());
+
+            String reformattedData = reformatAllCountriesInfo(response.getBody());
+            cache.put(cacheKey, new CacheEntry(reformattedData, LocalDateTime.now().plusHours(1)));
+            return reformattedData;
 
         } catch (UnirestException e) {
             LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting all countries: " + e.getMessage()));
@@ -53,6 +69,12 @@ public class CountryService {
             return null;
         }
 
+        String cacheKey = "country_" + countryName;
+        CacheEntry cached = cache.get(cacheKey);
+        if (cached != null && cached.isValid()) {
+            return cached.getData();
+        }
+
         Unirest.setTimeouts(0, 0);
         try {
             HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/country?name=" + countryName)
@@ -61,7 +83,10 @@ public class CountryService {
             LOGGER.log(new LogRecord(INFO_LEVEL, "Country information received: " + countryName));
 
             if (response.getStatus() != 200) throw new UnirestException(response.getBody());
-            return reformatCountryInfo(response.getBody());
+
+            String reformattedData = reformatCountryInfo(response.getBody());
+            cache.put(cacheKey, new CacheEntry(reformattedData, LocalDateTime.now().plusHours(1)));
+            return reformattedData;
 
         } catch (UnirestException e) {
             LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting country by name: " + e.getMessage()));
