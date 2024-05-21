@@ -1,20 +1,25 @@
 package com.webdesign.countryservice.controller;
 
+import com.webdesign.countryservice.exception.HttpCustomException;
 import com.webdesign.countryservice.service.WeatherService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/countries")
 public class WeatherController {
+
     @Autowired
     private WeatherService weatherService;
 
     @GetMapping("/{name}/weather")
-    public String getWeatherByCountryName(@RequestHeader("Authorization") String apiToken, @PathVariable String name) {
-        String capitalWeather = weatherService.getWeatherByCountryName(name, apiToken);
-        return Objects.requireNonNullElse(capitalWeather, "Can not get country weather information.");
+    public ResponseEntity<String> getWeatherByCountryName(@RequestHeader("Authorization") String apiToken, @PathVariable String name) {
+        try {
+            String capitalWeather = weatherService.getWeatherByCountryName(name, apiToken);
+            return ResponseEntity.ok(capitalWeather);
+        } catch (HttpCustomException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
     }
 }

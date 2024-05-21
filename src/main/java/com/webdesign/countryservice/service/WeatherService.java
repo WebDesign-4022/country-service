@@ -3,10 +3,12 @@ package com.webdesign.countryservice.service;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import com.webdesign.countryservice.exception.HttpCustomException;
 import com.webdesign.countryservice.model.ApiToken;
 import com.webdesign.countryservice.model.CacheEntry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.google.gson.JsonElement;
@@ -16,16 +18,10 @@ import com.google.gson.JsonParser;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 
 @Service
 public class WeatherService {
-    private static final Logger LOGGER = Logger.getLogger(WeatherService.class.getName());
-    private static final Level ERROR_LEVEL = Level.SEVERE;
-    private static final Level INFO_LEVEL = Level.INFO;
 
     @Value("${apiKey}")
     private String apiKey;
@@ -35,10 +31,10 @@ public class WeatherService {
     @Autowired
     private CountryService countryService;
 
-    public String getWeatherByCountryName(String countryName, String token) {
+    public String getWeatherByCountryName(String countryName, String token) throws HttpCustomException {
         ApiToken apiToken = ApiToken.getToken(token);
         if (apiToken == null || !apiToken.isValid()) {
-            return null;
+            throw new HttpCustomException(HttpStatus.UNAUTHORIZED, "Invalid api token");
         }
 
         String cacheKey = "weather_" + countryName;
@@ -48,27 +44,24 @@ public class WeatherService {
         }
 
         String countryInfo = countryService.getCountryByName(countryName, token);
-        if (countryInfo == null) return null;
 
         JsonElement rootElement = JsonParser.parseString(countryInfo);
         JsonObject jsonObject = rootElement.getAsJsonObject();
         String capitalName = jsonObject.get("capital").getAsString();
 
-        Unirest.setTimeouts(0, 0);
         try {
-            HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/weather?city=" + capitalName)
-                    .header("X-Api-Key", apiKey)
-                    .asString();
-            LOGGER.log(new LogRecord(INFO_LEVEL, "Weather information received: " + capitalName));
+            Unirest.setTimeouts(0, 0);
+            HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/weather?city=" + capitalName).header("X-Api-Key", apiKey).asString();
 
-            if (response.getStatus() != 200) throw new UnirestException(response.getBody());
+            if (response.getStatus() != 200) {
+                throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Can not connect to external service");
+            }
             String reformattedData = reformatWeatherInfo(response.getBody(), countryName, capitalName);
             cache.put(cacheKey, new CacheEntry(reformattedData, LocalDateTime.now().plusHours(1)));
             return reformattedData;
 
         } catch (UnirestException e) {
-            LOGGER.log(new LogRecord(ERROR_LEVEL, "Error in getting weather by city name: " + e.getMessage()));
-            return null;
+            throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Error in getting weather by city name: " + e.getMessage());
         }
     }
 
