@@ -78,6 +78,10 @@ public class CountryService {
                 throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Can not connect to external service");
             }
 
+            if (response.getBody().length() < 3) {
+                throw new HttpCustomException(HttpStatus.NOT_FOUND, "Can not find country with name " + countryName);
+            }
+
             String reformattedData = reformatCountryInfo(response.getBody());
             cache.put(cacheKey, new CacheEntry(reformattedData, LocalDateTime.now().plusHours(1)));
             return reformattedData;
