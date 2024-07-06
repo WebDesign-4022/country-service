@@ -1,6 +1,7 @@
 package com.webdesign.countryservice.model;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -8,8 +9,8 @@ import java.util.UUID;
 public class User {
     private final String name;
     private final String password;
+    private final LocalDateTime registrationDate;
     private boolean active;
-
     private String loginToken;
     private LocalDateTime loginTokenExpires;
 
@@ -20,6 +21,7 @@ public class User {
         this.name = name;
         this.password = password;
         this.active = false;
+        this.registrationDate = LocalDateTime.now();
         users.add(this);
     }
 
@@ -37,6 +39,11 @@ public class User {
 
     public boolean getActive() {
         return active;
+    }
+
+    public String getRegistrationDate() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+        return registrationDate.format(formatter);
     }
 
     public boolean isTokenValid() {

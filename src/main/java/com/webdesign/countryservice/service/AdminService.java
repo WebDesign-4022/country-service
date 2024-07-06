@@ -47,6 +47,7 @@ public class AdminService {
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("username", user.getName());
             jsonObject.addProperty("active", user.getActive());
+            jsonObject.addProperty("registrationDate", user.getRegistrationDate());
             jsonArray.add(jsonObject);
         }
 
