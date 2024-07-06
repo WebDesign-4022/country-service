@@ -28,6 +28,11 @@ public class AdminService {
         }
 
         user.setActive(active);
+
+        if (!active) {
+            user.revokeLoginToken();
+        }
+
         return "{\"success\": true}";
     }
 

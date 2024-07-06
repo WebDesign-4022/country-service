@@ -85,11 +85,17 @@ public class User {
             if (user.getName().equals(name) && user.getPassword().equals(password) && user.active) {
                 if (user.loginToken == null || !user.isTokenValid()) {
                     user.loginToken = "LOGIN " + UUID.randomUUID();
-                    user.loginTokenExpires = LocalDateTime.now().plusMinutes(10);
+                    user.loginTokenExpires = LocalDateTime.now().plusDays(1);
                 }
                 return user.loginToken;
             }
         }
         return null;
+    }
+
+    public void revokeLoginToken() {
+        if (loginToken != null) {
+            loginToken = null;
+        }
     }
 }
