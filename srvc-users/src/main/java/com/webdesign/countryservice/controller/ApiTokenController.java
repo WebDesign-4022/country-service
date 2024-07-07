@@ -47,4 +47,14 @@ public class ApiTokenController {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         }
     }
+
+    @GetMapping("/validate-token")
+    public ResponseEntity<String> validateToken(@RequestHeader("Authorization") String apiToken) {
+        try {
+            String response = apiTokenService.validateToken(apiToken);
+            return ResponseEntity.ok(response);
+        } catch (HttpCustomException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        }
+    }
 }

@@ -55,6 +55,15 @@ public class ApiTokenService {
         return "{\"success\": \"true\"}";
     }
 
+    public String validateToken(String token) throws HttpCustomException {
+        ApiToken apiToken = ApiToken.getToken(token);
+        if (apiToken == null || !apiToken.isValid()) {
+            throw new HttpCustomException(HttpStatus.UNAUTHORIZED, "Invalid token");
+        }
+
+        return "{\"valid\": \"true\"}";
+    }
+
     private static JsonObject reformatTokensList(List<ApiToken> apiTokens) {
         JsonArray tokensArray = new JsonArray();
 

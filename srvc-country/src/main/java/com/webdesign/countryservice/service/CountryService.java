@@ -2,7 +2,6 @@ package com.webdesign.countryservice.service;
 
 
 import com.webdesign.countryservice.exception.HttpCustomException;
-import com.webdesign.countryservice.model.ApiToken;
 import com.webdesign.countryservice.model.CacheEntry;
 
 import com.mashape.unirest.http.HttpResponse;
@@ -21,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.webdesign.countryservice.service.ExternalService.authorizeToken;
+
 @Service
 public class CountryService {
 
@@ -29,11 +30,8 @@ public class CountryService {
 
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
-    public String getAllCountries(String token) throws HttpCustomException {
-        ApiToken apiToken = ApiToken.getToken(token);
-        if (apiToken == null || !apiToken.isValid()) {
-            throw new HttpCustomException(HttpStatus.UNAUTHORIZED, "Invalid api token");
-        }
+    public String getAllCountries(String apiToken) throws HttpCustomException {
+        authorizeToken(apiToken);
 
         String cacheKey = "allCountries";
         CacheEntry cached = cache.get(cacheKey);
@@ -59,10 +57,7 @@ public class CountryService {
     }
 
     public String getCountryByName(String countryName, String token) throws HttpCustomException {
-        ApiToken apiToken = ApiToken.getToken(token);
-        if (apiToken == null || !apiToken.isValid()) {
-            throw new HttpCustomException(HttpStatus.UNAUTHORIZED, "Invalid api token");
-        }
+        authorizeToken(token);
 
         String cacheKey = "country_" + countryName;
         CacheEntry cached = cache.get(cacheKey);
@@ -85,6 +80,34 @@ public class CountryService {
             String reformattedData = reformatCountryInfo(response.getBody());
             cache.put(cacheKey, new CacheEntry(reformattedData, LocalDateTime.now().plusHours(1)));
             return reformattedData;
+
+        } catch (UnirestException e) {
+            throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Error in getting country by name: " + e.getMessage());
+        }
+    }
+
+    public String getCityCoordination(String cityName) throws HttpCustomException {
+        String cacheKey = "cityCoordination_" + cityName;
+        CacheEntry cached = cache.get(cacheKey);
+        if (cached != null && cached.isValid()) {
+            return cached.getData();
+        }
+
+        try {
+            Unirest.setTimeouts(0, 0);
+            HttpResponse<String> response = Unirest.get("https://api.api-ninjas.com/v1/city?name=" + cityName).header("X-Api-Key", apiKey).asString();
+
+            if (response.getStatus() != 200) {
+                throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Can not connect to external service");
+            }
+
+            if (response.getBody().length() < 3) {
+                throw new HttpCustomException(HttpStatus.NOT_FOUND, "Can not find city with name " + cityName);
+            }
+
+            String coordination = extractCityCoordination(response.getBody());
+            cache.put(cacheKey, new CacheEntry(coordination, LocalDateTime.now().plusHours(1)));
+            return coordination;
 
         } catch (UnirestException e) {
             throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Error in getting country by name: " + e.getMessage());
@@ -127,5 +150,12 @@ public class CountryService {
         simplifiedObject.add("currency", firstObject.get("currency").getAsJsonObject());
 
         return simplifiedObject.toString();
+    }
+
+    private String extractCityCoordination(String rawResponse) {
+        JsonElement rootElement = JsonParser.parseString(rawResponse);
+        JsonArray jsonArray = rootElement.getAsJsonArray();
+        JsonObject firstObject = jsonArray.get(0).getAsJsonObject();
+        return firstObject.get("latitude").getAsDouble() + "," + firstObject.get("longitude").getAsDouble();
     }
 }
