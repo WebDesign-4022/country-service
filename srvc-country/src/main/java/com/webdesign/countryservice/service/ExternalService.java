@@ -10,7 +10,7 @@ public class ExternalService {
     public static void authorizeToken(String apiToken) throws HttpCustomException {
         Unirest.setTimeouts(0, 0);
         try {
-            HttpResponse<String> response = Unirest.get("http://localhost:8080/user/validate-token").header("Authorization", apiToken).asString();
+            HttpResponse<String> response = Unirest.get("http://srvc-users:8080/user/validate-token").header("Authorization", apiToken).asString();
 
             if (response.getStatus() == 401) {
                 throw new HttpCustomException(HttpStatus.UNAUTHORIZED, "Invalid api token");
