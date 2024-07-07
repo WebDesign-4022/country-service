@@ -18,7 +18,8 @@ public class ExternalService {
                 throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected error");
             }
         } catch (UnirestException e) {
-            throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Error in getting all countries: " + e.getMessage());
+            System.out.println("details of unexpected error: " + e.getMessage());
+            throw new HttpCustomException(HttpStatus.INTERNAL_SERVER_ERROR, "Error in validating token: " + e.getMessage());
         }
     }
 }
